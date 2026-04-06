@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" 
+    content="width=device-width, initial-scale=1">
+  <title>RideOn</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    #map { width: 100vw; height: 100vh; }
+    #status {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<div id="status">📡 위치 수신 대기 중...</div>
+<div id="map"></div>
+
+<!-- 카카오 지도 SDK -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b00278b346142b34c5c4c5f1e88379d1"></script>
+
+<!-- Socket.io (서버에서 실시간 위치 받기) -->
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+  // 지도 초기화
+  var map = new kakao.maps.Map(
+    document.getElementById('map'), {
+      center: new kakao.maps.LatLng(37.5665, 126.9780),
+      level: 4
+    }
+  );
+
+  // 내 위치 마커
+  var marker = new kakao.maps.Marker({
+    position: map.getCenter(),
+    map: map
+  });
+
+  var statusEl = document.getElementById('status');
+
+  // 서버에서 실시간 위치 수신
+  var socket = io();
+
+  socket.on('connect', function() {
+    statusEl.textContent = '🟢 서버 연결됨';
+  });
+
+  socket.on('disconnect', function() {
+    statusEl.textContent = '🔴 서버 연결 끊김';
+  });
+
+  socket.on('locationUpdate', function(data) {
+    var position = new kakao.maps.LatLng(data.lat, data.lng);
+    marker.setPosition(position);
+    map.setCenter(position);
+    statusEl.textContent = 
+      '📍 ' + data.lat.toFixed(5) + ', ' + data.lng.toFixed(5);
+  });
+</script>
+
+</body>
+</html>
